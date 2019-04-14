@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="zh-CN" prefix="og: http://ogp.me/ns#">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+    <link rel="profile" href="http://gmpg.org/xfn/11">
+    <title>吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统 - 驿舟小站</title>
+
+    <!-- This site is optimized with the Yoast SEO plugin v8.1.1 - https://yoast.com/wordpress/plugins/seo/ -->
+    <meta name="description" content="一、异常检测（Anomaly Detection） 1.导论（Problem Motivation） 和其他学习问题一样，已知一个数据集​ ( {x^{(1)}, x^{(2)},dots,x^{(m)}}x (1) ,x (2) ,…,x (m) ) ​。 接下来我们又得到一个新的样本​ ( x_{test} ) ​，现在，我们想要知道这个样本是不是异常/坏点。 我们定义了一个“模型”(&quot;model&quot;) p(x)来告诉我们该样本是否异常。我们也使用了一个阈值ϵ作为评判样本是否异常的分界线。 一个常见的异常检测使用案例是诈骗检测： ​ ( x^{(i)}= ) ​用户活动的特征量 从数据而得的模型p(x) 通过p(x)" />
+    <link rel="canonical" href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-11/" />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统 - 驿舟小站" />
+    <meta property="og:description" content="一、异常检测（Anomaly Detection） 1.导论（Problem Motivation） 和其他学习问题一样，已知一个数据集​ \( {x^{(1)}, x^{(2)},\dots,x^{(m)}}x (1) ,x (2) ,…,x (m) \) ​。 接下来我们又得到一个新的样本​ \( x_{test} \) ​，现在，我们想要知道这个样本是不是异常/坏点。 我们定义了一个“模型”(&quot;model&quot;) p(x)来告诉我们该样本是否异常。我们也使用了一个阈值ϵ作为评判样本是否异常的分界线。 一个常见的异常检测使用案例是诈骗检测： ​ \( x^{(i)}= \) ​用户活动的特征量 从数据而得的模型p(x) 通过p(x)" />
+    <meta property="og:url" content="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-11/" />
+    <meta property="og:site_name" content="驿舟小站" />
+    <meta property="article:tag" content="机器学习" />
+    <meta property="article:section" content="挖掘算法" />
+    <meta property="article:published_time" content="2018-05-10T19:48:47+08:00" />
+    <meta property="article:modified_time" content="2018-07-08T20:27:02+08:00" />
+    <meta property="og:updated_time" content="2018-07-08T20:27:02+08:00" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:description" content="一、异常检测（Anomaly Detection） 1.导论（Problem Motivation） 和其他学习问题一样，已知一个数据集​ \( {x^{(1)}, x^{(2)},\dots,x^{(m)}}x (1) ,x (2) ,…,x (m) \) ​。 接下来我们又得到一个新的样本​ \( x_{test} \) ​，现在，我们想要知道这个样本是不是异常/坏点。 我们定义了一个“模型”(&quot;model&quot;) p(x)来告诉我们该样本是否异常。我们也使用了一个阈值ϵ作为评判样本是否异常的分界线。 一个常见的异常检测使用案例是诈骗检测： ​ \( x^{(i)}= \) ​用户活动的特征量 从数据而得的模型p(x) 通过p(x)" />
+    <meta name="twitter:title" content="吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统 - 驿舟小站" />
+    <meta name="twitter:image" content="https://i.loli.net/2018/05/08/5af189295d102.png" />
+    <script type='application/ld+json'>{"@context":"https:\/\/schema.org","@type":"Person","url":"https:\/\/www.zhouyongyi.com\/","sameAs":[],"@id":"#person","name":"Zhou Yongyi"}</script>
+    <!-- / Yoast SEO plugin. -->
+
+    <link rel='dns-prefetch' href='//cdnjs.cloudflare.com' />
+    <link rel='dns-prefetch' href='//s.w.org' />
+    <link rel="alternate" type="application/rss+xml" title="驿舟小站 &raquo; Feed" href="https://www.zhouyongyi.com/feed/" />
+    <link rel="alternate" type="application/rss+xml" title="驿舟小站 &raquo; 评论Feed" href="https://www.zhouyongyi.com/comments/feed/" />
+    <link rel="alternate" type="application/rss+xml" title="驿舟小站 &raquo; 吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统评论Feed" href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-11/feed/" />
+    <script type="text/javascript">
+        window._wpemojiSettings = { "baseUrl": "https:\/\/s.w.org\/images\/core\/emoji\/11\/72x72\/", "ext": ".png", "svgUrl": "https:\/\/s.w.org\/images\/core\/emoji\/11\/svg\/", "svgExt": ".svg", "source": { "concatemoji": "https:\/\/www.zhouyongyi.com\/wp-includes\/js\/wp-emoji-release.min.js?ver=4.9.8" } };
+        !function (a, b, c) { function d(a, b) { var c = String.fromCharCode; l.clearRect(0, 0, k.width, k.height), l.fillText(c.apply(this, a), 0, 0); var d = k.toDataURL(); l.clearRect(0, 0, k.width, k.height), l.fillText(c.apply(this, b), 0, 0); var e = k.toDataURL(); return d === e } function e(a) { var b; if (!l || !l.fillText) return !1; switch (l.textBaseline = "top", l.font = "600 32px Arial", a) { case "flag": return !(b = d([55356, 56826, 55356, 56819], [55356, 56826, 8203, 55356, 56819])) && (b = d([55356, 57332, 56128, 56423, 56128, 56418, 56128, 56421, 56128, 56430, 56128, 56423, 56128, 56447], [55356, 57332, 8203, 56128, 56423, 8203, 56128, 56418, 8203, 56128, 56421, 8203, 56128, 56430, 8203, 56128, 56423, 8203, 56128, 56447]), !b); case "emoji": return b = d([55358, 56760, 9792, 65039], [55358, 56760, 8203, 9792, 65039]), !b }return !1 } function f(a) { var c = b.createElement("script"); c.src = a, c.defer = c.type = "text/javascript", b.getElementsByTagName("head")[0].appendChild(c) } var g, h, i, j, k = b.createElement("canvas"), l = k.getContext && k.getContext("2d"); for (j = Array("flag", "emoji"), c.supports = { everything: !0, everythingExceptFlag: !0 }, i = 0; i < j.length; i++)c.supports[j[i]] = e(j[i]), c.supports.everything = c.supports.everything && c.supports[j[i]], "flag" !== j[i] && (c.supports.everythingExceptFlag = c.supports.everythingExceptFlag && c.supports[j[i]]); c.supports.everythingExceptFlag = c.supports.everythingExceptFlag && !c.supports.flag, c.DOMReady = !1, c.readyCallback = function () { c.DOMReady = !0 }, c.supports.everything || (h = function () { c.readyCallback() }, b.addEventListener ? (b.addEventListener("DOMContentLoaded", h, !1), a.addEventListener("load", h, !1)) : (a.attachEvent("onload", h), b.attachEvent("onreadystatechange", function () { "complete" === b.readyState && c.readyCallback() })), g = c.source || {}, g.concatemoji ? f(g.concatemoji) : g.wpemoji && g.twemoji && (f(g.twemoji), f(g.wpemoji))) }(window, document, window._wpemojiSettings);
+    </script>
+    <style type="text/css">
+        img.wp-smiley,
+        img.emoji {
+            display: inline !important;
+            border: none !important;
+            box-shadow: none !important;
+            height: 1em !important;
+            width: 1em !important;
+            margin: 0 .07em !important;
+            vertical-align: -0.1em !important;
+            background: none !important;
+            padding: 0 !important;
+        }
+    </style>
+    <link rel='stylesheet' id='crayon-css' href='https://www.zhouyongyi.com/wp-content/plugins/crayon-syntax-highlighter/css/min/crayon.min.css?ver=_2.7.2_beta'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='mathjax-scrollmath-css' href='https://www.zhouyongyi.com/wp-content/plugins/insert-math/mathjax/scrollmath.css?ver=4.9.8'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='jquery-ui-css' href='https://www.zhouyongyi.com/wp-content/plugins/insert-math/jquery-ui-css/jquery-ui.css?ver=4.9.8'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='insert-math-dialog-css' href='https://www.zhouyongyi.com/wp-content/plugins/insert-math/dialog/dialog.css?ver=4.9.8'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='toc-screen-css' href='https://www.zhouyongyi.com/wp-content/plugins/table-of-contents-plus/screen.min.css?ver=1509'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='wordpress-popular-posts-css-css' href='https://www.zhouyongyi.com/wp-content/plugins/wordpress-popular-posts/public/css/wpp.css?ver=4.1.2'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='wpstatistics-css-css' href='https://www.zhouyongyi.com/wp-content/plugins/wp-statistics/assets/css/frontend.css?ver=12.4.2'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='font-awesome-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/icons/fontawesome/font-awesome.min.css?ver=4.5.0'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='bootstrap-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/bootstrap.min.css?ver=3.3.7'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='flexslider-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/flexslider.css?ver=2.6.2'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='prettyPhoto-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/jquery.prettyPhoto.css?ver=3.1.5'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='shadower-flexslider-custom-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/flexslider-custom.css?ver=2.7.9'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='shadower-animsition-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/animsition.min.css?ver=4.0.2'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='shadower-main-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/main.min.css?ver=2.7.9'
+        type='text/css' media='all' />
+    <link rel='stylesheet' id='shadower-main-mobile-css' href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/jquery.sidr.light.css?ver=2.7.9'
+        type='text/css' media='all' />
+    <!--[if lt IE 10]>
+<link rel='stylesheet' id='old-ie-css'  href='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/css/old-ie.css?ver=2.7.9' type='text/css' media='all' />
+<![endif]-->
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/jquery.js?ver=1.12.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/jquery-migrate.min.js?ver=1.4.1'></script>
+    <script type='text/javascript'>
+        /* <![CDATA[ */
+        var CrayonSyntaxSettings = { "version": "_2.7.2_beta", "is_admin": "0", "ajaxurl": "https:\/\/www.zhouyongyi.com\/wp-admin\/admin-ajax.php", "prefix": "crayon-", "setting": "crayon-setting", "selected": "crayon-setting-selected", "changed": "crayon-setting-changed", "special": "crayon-setting-special", "orig_value": "data-orig-value", "debug": "" };
+        var CrayonSyntaxStrings = { "copy": "Press %s to Copy, %s to Paste", "minimize": "Click To Expand Code" };
+/* ]]> */
+    </script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/crayon-syntax-highlighter/js/min/crayon.min.js?ver=_2.7.2_beta'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/insert-math/mathjax/config.js?ver=4.9.8'></script>
+    <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?ver=4.9.8'></script>
+    <script type='text/javascript'>
+        /* <![CDATA[ */
+        var wpp_params = { "sampling_active": "0", "sampling_rate": "100", "ajax_url": "https:\/\/www.zhouyongyi.com\/wp-json\/wordpress-popular-posts\/v1\/popular-posts\/", "action": "update_views_ajax", "ID": "350", "token": "082e8497e1", "debug": "" };
+/* ]]> */
+    </script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/wordpress-popular-posts/public/js/wpp-4.1.0.min.js?ver=4.1.2'></script>
+    <!--[if lt IE 9]>
+<script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/respond.min.js?ver=1.4.2'></script>
+<![endif]-->
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.easing.min.js?ver=1.3'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.mousewheel.min.js?ver=3.1.12'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/modernizr.min.js?ver=3.3.1'></script>
+    <link rel='https://api.w.org/' href='https://www.zhouyongyi.com/wp-json/' />
+    <link rel="EditURI" type="application/rsd+xml" title="RSD" href="https://www.zhouyongyi.com/xmlrpc.php?rsd" />
+    <link rel="wlwmanifest" type="application/wlwmanifest+xml" href="https://www.zhouyongyi.com/wp-includes/wlwmanifest.xml" />
+    <meta name="generator" content="WordPress 4.9.8" />
+    <link rel='shortlink' href='https://www.zhouyongyi.com/?p=350' />
+    <link rel="alternate" type="application/json+oembed" href="https://www.zhouyongyi.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.zhouyongyi.com%2Fandrew-ng-machine-learning-notes-11%2F" />
+    <link rel="alternate" type="text/xml+oembed" href="https://www.zhouyongyi.com/wp-json/oembed/1.0/embed?url=https%3A%2F%2Fwww.zhouyongyi.com%2Fandrew-ng-machine-learning-notes-11%2F&#038;format=xml" />
+    <script type="text/javascript">
+        window._wp_rp_static_base_url = 'https://wprp.zemanta.com/static/';
+        window._wp_rp_wp_ajax_url = "https://www.zhouyongyi.com/wp-admin/admin-ajax.php";
+        window._wp_rp_plugin_version = '3.6.4';
+        window._wp_rp_post_id = '350';
+        window._wp_rp_num_rel_posts = '6';
+        window._wp_rp_thumbnails = true;
+        window._wp_rp_post_title = '%E5%90%B4%E6%81%A9%E8%BE%BE%E3%80%8A%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0%E3%80%8B%E8%AF%BE%E7%A8%8B%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0%EF%BC%88%E5%8D%81%E4%B8%80%EF%BC%89%E2%80%94%E2%80%94+%E5%BC%82%E5%B8%B8%E6%A3%80%E6%B5%8B%E4%B8%8E%E6%8E%A8%E8%8D%90%E7%B3%BB%E7%BB%9F';
+        window._wp_rp_post_tags = ['%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0', '%E6%95%B0%E6%8D%AE%E5%88%86%E6%9E%90', '%E6%8C%96%E6%8E%98%E7%AE%97%E6%B3%95', 'base', 'left', 'lili', 'x1', 'ul', 'detect', 'prod', '1', 'nm', 'f1', 'xi', 'x2', 'nu', 'featur', 'anomali'];
+        window._wp_rp_promoted_content = true;
+    </script>
+    <link rel="stylesheet" href="https://www.zhouyongyi.com/wp-content/plugins/wordpress-23-related-posts-plugin/static/themes/momma.css?version=3.6.4" />
+    <link rel="pingback" href="https://www.zhouyongyi.com/xmlrpc.php">
+    <style type="text/css">
+        .recentcomments a {
+            display: inline !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+    </style>
+    <link rel="icon" href="https://www.zhouyongyi.com/wp-content/uploads/2018/01/cropped-b0154f1ac8e292e12251321be9e28e24-32x32.jpg"
+        sizes="32x32" />
+    <link rel="icon" href="https://www.zhouyongyi.com/wp-content/uploads/2018/01/cropped-b0154f1ac8e292e12251321be9e28e24-192x192.jpg"
+        sizes="192x192" />
+    <link rel="apple-touch-icon-precomposed" href="https://www.zhouyongyi.com/wp-content/uploads/2018/01/cropped-b0154f1ac8e292e12251321be9e28e24-180x180.jpg" />
+    <meta name="msapplication-TileImage" content="https://www.zhouyongyi.com/wp-content/uploads/2018/01/cropped-b0154f1ac8e292e12251321be9e28e24-270x270.jpg" />
+
+</head>
+
+<body class="post-template-default single single-post postid-350 single-format-standard single-author sidebar">
+
+    <!-- Menu Toggle
+    ============================================= -->
+    <div class="menu-toggle">
+        <span class="l1"></span>
+        <span class="l2"></span>
+        <span class="l3"></span>
+    </div>
+    <!-- .menu-toggle end -->
+
+    <!-- Loader
+    ============================================= -->
+    <div class="loader">
+        <!--[if lt IE 10]>
+            <span>Loading...</span>
+        <![endif]-->
+        <svg class="spinner" width="45px" height="45px" viewBox="0 0 52 52">
+            <circle class="path" cx="26px" cy="26px" r="20px" fill="none" stroke-width="4px" />
+        </svg>
+    </div>
+    <!-- .loader end -->
+
+
+
+    <div class="wrapper animsition">
+
+
+        <!-- Header Area
+        ============================================= -->
+        <header class="header-area transition">
+
+            <div class="header-container transition">
+
+
+                <div class="container">
+
+                    <div class="brand">
+                        <a href="https://www.zhouyongyi.com/" rel="home">
+                            驿舟小站 </a>
+
+                        <p class="description">ZhouYongyi&#039;s Personal Blog</p>
+
+                    </div>
+                    <!-- .logo end -->
+
+                </div>
+                <!-- .container end -->
+
+
+
+                <!-- Navigation Start-->
+
+                <nav class="menu-wrapper transition">
+                    <span class="mobile-brand">
+                        <img src="https://www.zhouyongyi.com/wp-content/themes/shadower/assets/images/blank.gif" alt="驿舟小站" />
+
+                    </span>
+                    <div class="social-list social-header">
+                        <ul>
+                        </ul>
+                    </div>
+                    <div class="menu-left transition">
+
+                        <ul class="menu-main" id="primary-menu">
+                            <li id="menu-item-52" class="menu-item menu-item-type-custom menu-item-object-custom menu-item-home mega-menu menu-item-52"><a
+                                    href="https://www.zhouyongyi.com" data-target-pjax="1"><span data-title="首页">首页</span></a></li>
+                            <li id="menu-item-231" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-has-children mega-menu menu-item-231"><a
+                                    href="https://www.zhouyongyi.com/distributed-system/" data-target-pjax="1"><span
+                                        data-title="分布式系统">分布式系统</span></a>
+                                <ul class="sub-menu">
+                                    <li id="menu-item-389" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-389"><a
+                                            href="https://www.zhouyongyi.com/distributed-system/batch/"
+                                            data-target-pjax="1"><span data-title="批处理系统">批处理系统</span></a></li>
+                                    <li id="menu-item-390" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-390"><a
+                                            href="https://www.zhouyongyi.com/distributed-system/streaming/"
+                                            data-target-pjax="1"><span data-title="流处理系统">流处理系统</span></a></li>
+                                    <li id="menu-item-391" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-391"><a
+                                            href="https://www.zhouyongyi.com/distributed-system/message-queue/"
+                                            data-target-pjax="1"><span data-title="消息队列">消息队列</span></a></li>
+                                </ul>
+                            </li>
+                            <li id="menu-item-101" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-has-children mega-menu menu-item-101"><a
+                                    href="https://www.zhouyongyi.com/data-analysis/" data-target-pjax="1"><span
+                                        data-title="数据分析">数据分析</span></a>
+                                <ul class="sub-menu">
+                                    <li id="menu-item-392" class="menu-item menu-item-type-taxonomy menu-item-object-category current-post-ancestor current-menu-parent current-post-parent menu-item-392"><a
+                                            href="https://www.zhouyongyi.com/data-analysis/data-mining-algorithm/"
+                                            data-target-pjax="1"><span data-title="挖掘算法">挖掘算法</span></a></li>
+                                    <li id="menu-item-393" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-393"><a
+                                            href="https://www.zhouyongyi.com/data-analysis/operations-research/"
+                                            data-target-pjax="1"><span data-title="最优化理论">最优化理论</span></a></li>
+                                    <li id="menu-item-412" class="menu-item menu-item-type-taxonomy menu-item-object-category menu-item-412"><a
+                                            href="https://www.zhouyongyi.com/data-analysis/natural-language-process/"
+                                            data-target-pjax="1"><span data-title="自然语言处理">自然语言处理</span></a></li>
+                                </ul>
+                            </li>
+                            <li id="menu-item-55" class="menu-item menu-item-type-taxonomy menu-item-object-category mega-menu menu-item-55"><a
+                                    href="https://www.zhouyongyi.com/things/" data-target-pjax="1"><span data-title="杂记">杂记</span></a></li>
+                            <li id="menu-item-51" class="menu-item menu-item-type-post_type menu-item-object-page mega-menu menu-item-51"><a
+                                    href="https://www.zhouyongyi.com/about/" data-target-pjax="1"><span data-title="关于">关于</span></a></li>
+                        </ul>
+
+
+                    </div>
+
+                    <!-- .menu-left end -->
+                    <div class="menu-right transition">
+                        <form class="clearfix search-form-show" method="get" action="https://www.zhouyongyi.com/">
+                            <div class="input-inner-icon">
+                                <i class="fa fa-search" id="menu-search-btn"></i>
+                                <input type="search" class="controls-custom" name="s" id="s" placeholder="Type search and hit enter" />
+                            </div>
+                        </form>
+                    </div>
+                    <!-- .menu-right end -->
+
+
+
+                </nav>
+                <!-- .menu-wrapper end -->
+
+
+                <div class="clear"></div>
+            </div>
+
+        </header>
+        <div class="header-inner auto-height"></div>
+
+
+        <!-- Stage
+        ============================================= -->
+        <canvas id="stage"></canvas>
+
+
+
+
+
+
+
+
+
+        <section class="space-none-top post-350 post type-post status-publish format-standard hentry category-data-mining-algorithm category-data-analysis tag-machine-learning"
+            id="post-350">
+            <div class="parallax parallax-auto overlay-bg overlay-bg-black overlay-text-white height-50 entry-title-container"
+                data-speed="0.3" data-image-src="https://www.zhouyongyi.com/wp-content/themes/shadower/assets/images/default-cover.jpg">
+                <img src="https://www.zhouyongyi.com/wp-content/themes/shadower/assets/images/default-cover.jpg" class="parallax-img"
+                    alt="吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统">
+                <div class="pos-vertical-align t-c">
+                    <div class="row">
+                        <div class="col-sm-8 col-sm-offset-2">
+                            <h1 class="h2">吴恩达《机器学习》课程学习笔记（十一）—— 异常检测与推荐系统</h1>
+                            <ul class="entry-meta">
+                                <li>
+                                    <time class="post-date" datetime="2018-05-10T19:48:47+00:00">2018-05-10</time> </li>
+                                <li>
+                                    By: <span class="byline"><span class="author vcard"><span class="screen-reader-text">Author
+                                            </span><a class="url fn n" href="https://www.zhouyongyi.com/author/zhouyongyi/">zhouyongyi</a></span></span>
+                                </li>
+                                <li>
+                                    <a href="https://www.zhouyongyi.com/data-analysis/data-mining-algorithm/" rel="tag">挖掘算法</a>,
+                                    <a href="https://www.zhouyongyi.com/data-analysis/" rel="tag">数据分析</a> </li>
+                                <li>
+                                    <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-11/#respond">No
+                                        Comments</a> </li>
+
+                            </ul>
+                            <!-- .entry-meta end -->
+
+                        </div>
+                    </div>
+                    <!-- .row end -->
+
+                </div>
+                <!-- .pos-vertical-align  end -->
+            </div>
+        </section>
+
+
+        <section class="space-none-top">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-9">
+
+                        <!-- Entry Title
+                        ========================= -->
+
+                        <!-- Entry Content
+                        ========================= -->
+                        <div class="entry-content list-normal table-normal">
+
+                            <div id="toc_container" class="toc_light_blue no_bullets">
+                                <p class="toc_title">Contents</p>
+                                <ul class="toc_list">
+                                    <li><a href="#Anomaly_Detection">一、异常检测（Anomaly Detection）</a>
+                                        <ul>
+                                            <li><a href="#1Problem_Motivation">1.导论（Problem Motivation）</a></li>
+                                            <li><a href="#2Algorithm">2.算法（Algorithm）</a></li>
+                                            <li><a href="#3Developing_and_Evaluating_an_Anomaly_Detection_System">3.开发和评估一个异常监测系统（Developing
+                                                    and Evaluating an Anomaly Detection System）</a></li>
+                                            <li><a href="#4Anomaly_Detection_vs_Supervised_Learning">4.异常检测与监督学习（Anomaly
+                                                    Detection vs. Supervised Learning）</a></li>
+                                            <li><a href="#5Choosing_What_Features_to_Use">5.选取要使用的特征量（Choosing What
+                                                    Features to Use）</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#Recommender_Systems">二、推荐系统（Recommender Systems）</a>
+                                        <ul>
+                                            <li><a href="#1Problem_Formulation">1.导论（Problem Formulation）</a></li>
+                                            <li><a href="#2Content_Based_Recommendations">2.基于内容的推荐（Content Based
+                                                    Recommendations）</a></li>
+                                            <li><a href="#3Collaborative_Filtering">3.协作过滤（Collaborative Filtering）</a></li>
+                                            <li><a href="#4Vectorization_Low_Rank_Matrix_Factorization">4.向量化：低秩矩阵分解（Vectorization:
+                                                    Low Rank Matrix Factorization）</a></li>
+                                            <li><a href="#5Mean_Normalization">5.实现的细节：均值标准化（Mean Normalization）</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#i">三、第八次编程作业</a>
+                                        <ul>
+                                            <li><a href="#i-2">更多文章</a></li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </div>
+                            <h2><span id="Anomaly_Detection">一、异常检测（Anomaly Detection）</span></h2>
+                            <h3><span id="1Problem_Motivation">1.导论（Problem Motivation）</span></h3>
+                            <p>和其他学习问题一样，已知一个数据集​<span class="math inherit-color ">\( x^{(1)}, x^{(2)},\dots,x^{(m)} \)</span>​。</p>
+                            <p>接下来我们又得到一个新的样本​<span class="math inherit-color">\( x_{test} \)</span>​，现在，我们想要知道这个样本是不是异常/坏点。</p>
+                            <p>我们定义了一个“模型”(&#8220;model&#8221;) p(x)来告诉我们该样本是否异常。我们也使用了一个阈值ϵ作为评判样本是否异常的分界线。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/08/5af189295d102.png"
+                                    width="1020" height="554" /></p>
+                            <p>一个常见的异常检测使用案例是诈骗检测：</p>
+                            <ul>
+                                <li>​<span class="math inherit-color">\( x^{(i)}= \)</span>​用户活动的特征量</li>
+                                <li>从数据而得的模型p(x)</li>
+                                <li>通过p(x)&lt;ϵ这一条件找出异常的用户</li>
+                            </ul>
+                            <p>如果最后我们的异常检测算法标记出的异常样本<strong>太多了，</strong>那我们需要<strong>减小</strong>阈值ϵ，以此降低被划为异常样本的样本数。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/08/5af18c5d4f074.png"
+                                    width="1022" height="568" /></p>
+                            <h3><span id="2Algorithm">2.算法（Algorithm）</span></h3>
+                            <p>给定一个数据集​<span class="math inherit-color ">\( \left\{x (1) ,…,x (m) \right\} \)</span>​，其中的每一个样本都是一个向量，​<span
+                                    class="math inherit-color ">\( x\in\mathbb{R}^n \)</span>​.</p>
+                            <p class="math inherit-color">\[
+                                p(x)=p(x_1;\mu_1,\sigma_1^2)p(x_2;\mu_2,\sigma_2^2)&#8230;p(x_n;\mu_n,\sigma_n^2) \]</p>
+                            <p>在统计学里，我们将样本中的这些特征量看作是相互独立的，称为“独立性假设”。</p>
+                            <p>我们可以更简洁地表达为：</p>
+                            <p class="math inherit-color">\[ \prod _{j=1}^n p(x_j;\mu_j,\sigma_j^2) \]</p>
+                            <p>接下来选取你认为对指明样本异常有帮助的特征量​<span class="math inherit-color ">\( x_i \)</span>​.</p>
+                            <p>我们在这里使用高斯分布（即正态分布）来建模，即，把p(x)记为高斯分布概率：</p>
+                            <p>适配参数​<span class="math inherit-color ">\(
+                                    \mu_1,&#8230;,\mu_n,\sigma_1^2,&#8230;,\sigma_n^2 \)</span>​</p>
+                            <p>计算平均值​<span class="math inherit-color ">\( \mu_j=\frac{1}{m}\sum_{i=1}^{m}x_j^{(i)} \)</span>​</p>
+                            <p>计算方差​<span class="math inherit-color">\(
+                                    \sigma_j^2=\frac{1}{m}\sum_{i=1}^{m}(x_j^{(i)}-\mu_j)^2 \)</span>​</p>
+                            <p>对于一个新的样本x，计算p(x)：</p>
+                            <p class="math inherit-color">\[
+                                p（x）=\prod_{j=1}^np(x_j;\mu_j,\sigma_j^2)=\prod_{j=1}^n\frac{1}{\sqrt{2\pi}\sigma_j}exp{(-\frac{(x_j-\mu_j)^2}{2\sigma_j^2})}
+                                \]</p>
+                            <p>如果p(x)&lt;ϵ，则样本异常。</p>
+                            <p><strong>（思想就是，如果一个样本的出现概率是小于阈值ϵ的，那么可以认为出现该样本即为异常）</strong></p>
+                            <p>&nbsp;</p>
+                            <p>向量化的μ计算方法可以表示为​<span class="math inherit-color ">\( \mu=\frac{1}{m}\sum_{i=1}^mx^{(i)}
+                                    \)</span>​,你可以以同样的方式将​<span class="math inherit-color">\( \sigma^2 \)</span>​的计算方式向量化。</p>
+                            <h3><span id="3Developing_and_Evaluating_an_Anomaly_Detection_System">3.开发和评估一个异常监测系统（Developing
+                                    and Evaluating an Anomaly Detection System）</span></h3>
+                            <p>为了评估我们的学习算法，我们需要得到一些标记数据，用来区分异常/正常样本（y=0时正常，y=1时异常）。</p>
+                            <p>也就是说，在数据集里，我们以占比很大的<strong>好的，正常的</strong>子数据集来训练p(x)。</p>
+                            <p>然后，我们以一个占比稍小的混合了正常数据和异常数据的子数据集来作交叉验证集和测试集（通常会有更多的正常样本）。</p>
+                            <p>例如，我们有一个数据集，其中0.2%的样本是异常的。我们把占总样本60%那么多的正常样本（y=0）取出来当作训练集。然后我们另取20%样本来作交叉验证集（其中有占总样本0.1%的异常样本），剩下20%的样本来作测试集（其中有占总样本0.1%的异常样本）。</p>
+                            <p>换句话说，我们将数据集分割成了60%/20%/20%分别作为训练集、交叉验证集、测试集，并且异常样本的50%/50%分别放在交叉验证集和训练集中。</p>
+                            <p>&nbsp;</p>
+                            <p><strong>算法评估：</strong></p>
+                            <p>用训练集​<span class="math inherit-color ">\( \left \{ x^{(1)},&#8230;,x^{(n)} \right \} \)</span>​来训练模型p(x)</p>
+                            <p>使用交叉验证集/测试集来验证：</p>
+                            <p>如果p(x)&lt;ϵ（<strong>异常</strong>），那么y=1</p>
+                            <p>如果p(x)≥ <strong>ϵ</strong>（<strong>正常</strong>），那么y=0</p>
+                            <p>可能的性能指标有（参考“机器学习系统设计”）：</p>
+                            <ul>
+                                <li>正确的positive，错误的positive，错误的negative，正确的negative</li>
+                                <li>预测/召回</li>
+                                <li>​<span class="math inherit-color ">\( F_1 \)</span>​指数</li>
+                            </ul>
+                            <p>要注意的是我们现在是使用交叉验证集来选择参数ϵ。</p>
+                            <p>&nbsp;</p>
+                            <h3><span id="4Anomaly_Detection_vs_Supervised_Learning">4.异常检测与监督学习（Anomaly Detection vs.
+                                    Supervised Learning）</span></h3>
+                            <p>通过上面的学习我们可以看到，异常检测也是使用了标记的数据来训练模型，最终用模型来划分出两类样本。那么，我们什么时候使用异常检测，什么时候使用监督学习呢？</p>
+                            <p><strong>在下列情况中使用异常检测：</strong></p>
+                            <ul>
+                                <li>我们拥有很少的positive样本与很多的negative样本。</li>
+                                <li>我们有许多不同“类型（type）”的异常，并且任何算法都很难从positive样本中知道异常是什么样的；未来出现的异常可能和我们现在已知的任何异常都不一样。</li>
+                            </ul>
+                            <p><strong>在下列情况中使用监督学习：</strong></p>
+                            <ul>
+                                <li>我们同时拥有很多的positive样本与negative样本。换句话说，训练集里的比例分配更均匀。</li>
+                                <li>我们有足够多的positive样本来预测新的positive样本是什么样的。未来出现的positive样本和训练集里已知的会很相似。</li>
+                            </ul>
+                            <h3><span id="5Choosing_What_Features_to_Use">5.选取要使用的特征量（Choosing What Features to Use）</span></h3>
+                            <p>你选取的特征量将会很大程度上影响你的异常检测算法。</p>
+                            <p>我们可以通过画出数据的直方图来进行模型拟合度检验，如之前的例子中，可以判断数据曲线能否很好的拟合高斯分布模型。</p>
+                            <p>如果我们的特征样本x的曲线没有很好地与模型拟合，那么我们可以尝试进行<strong>变换</strong>，例如：</p>
+                            <ul>
+                                <li>log(x)</li>
+                                <li>log(x+1)</li>
+                                <li>log(x+c)</li>
+                                <li>​<span class="math inherit-color">\( \sqrt{x} \)</span>​</li>
+                                <li>​<span class="math inherit-color">\( x^{1/3} \)</span>​</li>
+                            </ul>
+                            <p>我们可以尝试每一种变换，然后选取出一个满意的曲线。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/10/5af3af1322d04.png"
+                                    width="1046" height="588" /></p>
+                            <p>这是一种异常检测中的<strong>误差分析流程</strong>，和监督学习中的非常相似。</p>
+                            <p>我们的目标是让正常样本的p(x)足够大，异常样本的p(x)足够小。</p>
+                            <p>有一种常见的情况是，两种样本类型的p(x)一样。在这种情况下，你需要检查那些大概率给出异常样本的情况，然后尝试用新的特征量来更好地区分数据。</p>
+                            <p>一般来说，选择特征量时，最好选择对于异常示例具有异常大或者小值的那些特征量。</p>
+                            <p>&nbsp;</p>
+                            <h2><span id="Recommender_Systems">二、推荐系统（Recommender Systems）</span></h2>
+                            <h3><span id="1Problem_Formulation">1.导论（Problem Formulation）</span></h3>
+                            <p>我们以预测电影评分系统为例，进行讨论：</p>
+                            <p>现在我们在院线上有五部电影，并且有四个观众的评分数据，评分从一星到五星，观众有可能并没看该电影，也就是未评分。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/10/5af44538220fc.png"
+                                    width="956" height="537" /></p>
+                            <p>在这里，我们给出如下定义：</p>
+                            <ul>
+                                <li>​<span class="math inherit-color">\( n_u= \)</span>​用户的数量</li>
+                                <li>​<span class="math inherit-color">\( n_m= \)</span>​电影的数量</li>
+                                <li>如果用户j对电影i进行了评分，​<span class="math inherit-color">\( r(i,j)=1 \)</span>​</li>
+                                <li>​<span class="math inherit-color">\( y(i,j)=1 \)</span>​用户j对电影i的评分（只有r(i,j)=1时才有效）。</li>
+                            </ul>
+                            <h3><span id="2Content_Based_Recommendations">2.基于内容的推荐（Content Based Recommendations）</span></h3>
+                            <p>我们先引入两个特征量​<span class="math inherit-color">\( x_1 \)</span>​和<span class="math inherit-color">\(
+                                    x_2 \)</span>​，它们分别代表一部电影的“浪漫程度”、“动作精彩程度”，变化范围0-1.</p>
+                            <p>一个方法是，我们对每个用户单独使用一次线性回归。对于用户j的数据而言，学习得到一组参数​<span class="math inherit-color ">\(
+                                    \theta^{(j)} \in \mathbb{R}^3 \)</span>​。然后预测用户j对电影i的评星​<span class="math inherit-color ">\(
+                                    (θ ^{ (j)} )^ T x ^{ (i)} \)</span>​。</p>
+                            <ul>
+                                <li>​<span class="math inherit-color">\( \theta^{(j)}= \)</span>​用户j的参数向量</li>
+                                <li>​<span class="math inherit-color">\( x^{(i)}= \)</span>​电影i的特征向量</li>
+                            </ul>
+                            <p>对于用户j，电影i，预测评星：​<span class="math inherit-color">\( (θ ^{ (j)} )^ T x ^{ (i)} \)</span></p>
+                            <ul>
+                                <li><span class="math inherit-color">\( m^{(i)}= \)</span>用户j评过星的电影数​</li>
+                            </ul>
+                            <p>为了学习​<span class="math inherit-color">\( \theta^{(j)} \)</span>，我们需要进行如下操作：</p>
+                            <p class="math inherit-color">\[
+                                min_{\theta(j)}=\frac{1}{2}\sum_{i:r(i,j)=1}((\theta^{(j)})^T(x^{(i)})-y^{(i,j)})^2+\frac{\lambda}{2}\sum_{k=1}^n(\theta_k^{(j)})^2
+                                \]</p>
+                            <p>这正是我们所熟悉的线性回归。第一项求和的下标是为了选出所有使r(i,j)=1的i。</p>
+                            <p>为了得到所有用户的参数，我们可以这样做：</p>
+                            <p class="math inherit-color">\[
+                                min_{\theta^{(1),&#8230;,\theta^{(n_u)}}}=\frac{1}{2}\sum_{j=1}^{n_u}\sum_{i:r(i,j)=1}((\theta^{(j)})^T(x^{(i)})-y^{(i,j)})^2+\frac{\lambda}{2}\sum_{j=1}^{n_u}\sum_{k=1}^n(\theta_k^{(j)})^2
+                                \]</p>
+                            <p>接下来我们能够使用线性回归梯度下降算法来得出上面代价函数的最优解。</p>
+                            <p>唯一不同的是，我们<strong>消除了常数​<span class="math inherit-color ">\( \frac{1}{m} \)</span>​.</strong></p>
+                            <p>&nbsp;</p>
+                            <h3><span id="3Collaborative_Filtering">3.协作过滤（Collaborative Filtering）</span></h3>
+                            <p>我们如果想要知道一部电影的“浪漫程度”、“动作精彩程度”，可以通过用户的偏好参数以及其对于该电影的评价来推测。</p>
+                            <p>如果用户没有给定我们他的偏好系数该怎么办呢？这时候就需要反过来用电影的特征来推断其偏好参数了。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/11/5af4f10db902a.png"
+                                    width="955" height="537" /></p>
+                            <p>这样子反复不断的相互影响，虽然可行，但是显得有些麻烦。那么，我们有没有办法同时计算出两者呢？</p>
+                            <p>这就引入了协作过滤算法：</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/11/5af4f402659de.png"
+                                    width="956" height="536" /></p>
+                            <p>我们看到，它们互相影响对方的表达式中，第一项是一样的，区别在于第二项θ和x，那么我们可以综合两者得出新的最小化代价函数目标：</p>
+                            <p class="math inherit-color">\[ J(x,θ)= \frac{1}{2} \sum_{​ (i,j):r(i,j)=1} ​ ((θ^{ (j)} )
+                                ^ T x (i) −y ^{ (i,j)} ) ^ 2 + 2 λ ​\sum_{ i=1} ^ {n_ m} ​\sum_{ k=1} ^ n ​ (x _k
+                                ^{(i)} ​ ) ^2 + 2 λ ​\sum_{ j=1} ^{n_ u ​} ​\sum_{ k=1} ^n ​ (θ _k ^{(j)} ​ ) ^2
+                                \space\space\space\space\space\space(2.1) \]</p>
+                            <p>其中的偏置单元​<span class="math inherit-color ">\( x_0=1 \)</span>​被移除了，因此x和θ都是n维实空间。</p>
+                            <p>算法步骤如下：</p>
+                            <ol>
+                                <li>初始化​<span class="math inherit-color">\( x^{(i)} \)</span>​,&#8230;,​<span class="math inherit-color">\(
+                                        x^{(n_m)} \)</span>​,<span class="math inherit-color">\( \theta^{(1)} \)</span>​,&#8230;,<span
+                                        class="math inherit-color">\( \theta^{(n_u)} \)</span>​为随机小量。之所以这样而不是统一置零，是为了打破平衡确保<span
+                                        class="math inherit-color">\( x^{(i)} \)</span>​,&#8230;,​<span class="math inherit-color">\(
+                                        x^{(n_m)} \)</span>​相互不同。</li>
+                                <li>使用梯度下降算法（或者高级的优化算法）来最小化​<span class="math inherit-color">\(
+                                        J(x^{(i)},&#8230;,x^{(n_m)},\theta^{(1)},&#8230;,x^{(n_u)}) \)</span>​。
+                                    <p class="math inherit-color _focus">\[ x_ k^{ (i)} ​ :=x _k ^{(i)} ​ −α \left\{ ​
+                                        \sum_{ j:r(i,j)=1} ​ ((θ ^{(j)} ) ^T x ^{(i)} −y ^ {(i,j)} )θ _k ^{(j)} ​ +λx
+                                        _k ^{(i)} ​ \right\} ​ \]</p>
+                                    <p class="math inherit-color">\[ \theta_ k^{ (i)} ​ :=\theta _k ^{(i)} ​ −α \left\{
+                                        ​ \sum_{ i:r(i,j)=1} ​ ((θ ^{(j)} ) ^T x ^{(i)} −y ^ {(i,j)} )x _k ^{(i)} ​
+                                        +λ\theta _k ^{(j)} ​ \right\} ​ \]</p>
+                                </li>
+                                <li>使用一个用户的偏好参数θ和电影的特征系数x来预测该用户未评价过的电影的评星​<span class="math inherit-color ">\(
+                                        \theta^Tx \)</span>​。</li>
+                            </ol>
+                            <h3><span id="4Vectorization_Low_Rank_Matrix_Factorization">4.向量化：低秩矩阵分解（Vectorization: Low
+                                    Rank Matrix Factorization）</span></h3>
+                            <p>给定一个矩阵X（每一行包含一部电影的特征系数）和矩阵θ（每一行包含一个用户的偏好参数），那么矩阵​<span class="math inherit-color ">\(
+                                    Y=X\Theta^T \)</span>​代表了所有用户对所有电影的评星。</p>
+                            <p>如果想要判断两部电影的相似程度，可以使用它们的特征向量x。计算公式为​<span class="math inherit-color ">\( ∣∣x ^{(i)} −x
+                                    ^{(j)} ∣∣ \)</span>​。</p>
+                            <h3><span id="5Mean_Normalization">5.实现的细节：均值标准化（Mean Normalization）</span></h3>
+                            <p>在前面的例子中，我们的用户至少设定了一个及以上的偏好参数。当一个新用户完全没有设置任何参数也没有任何一次评星的时候，我们该如何处理呢？</p>
+                            <p>在这种情况下，如果直接进行预测，由于需要最小化代价函数，那么算法会认为新用户对所有电影的评分都是0。这样似乎并不是特别的直观与准确。</p>
+                            <p><img class="aligncenter size-full" src="https://i.loli.net/2018/05/11/5af502710052a.png"
+                                    width="954" height="535" /></p>
+                            <p>现在我们将通过对数据均值归一化来纠正这个问题。首先，我们使用一个矩阵Y来存储之前的评分数据，其中的第i行j列代表的是第j个用户对第i部电影的评星。</p>
+                            <p>然后定义一个向量​<span class="math inherit-color ">\( \mu=[\mu_1,\mu_2,&#8230;,\mu_{n_m}] \)</span>​</p>
+                            <p>其中</p>
+                            <p class="math inherit-color">\[ \mu_i=\frac{\sum_{j:r(i,j)=1}Y_{i,j}}{\sum_jr(i,j)} \]</p>
+                            <p>这实际上是第i部电影的之前评星的平均值（其中只有用户观看过的电影才被计算在内）。我们现在可以通过从每个用户的实际评分（矩阵Y中的列）中减去μ（平均评分）来标准化数据：</p>
+                            <p>例如，我们已知如下的Y矩阵和μ向量：</p>
+                            <p class="math inherit-color">\[ Y = \begin{bmatrix} 5 &amp; 5 &amp; 0 &amp; 0 \newline 4
+                                &amp; ? &amp; ? &amp; 0 \newline 0 &amp; 0 &amp; 5 &amp; 4 \newline 0 &amp; 0 &amp; 5
+                                &amp; 0 \newline \end{bmatrix}, \quad \mu = \begin{bmatrix} 2.5 \newline 2 \newline
+                                2.25 \newline 1.25 \newline \end{bmatrix} \]</p>
+                            <p>那么标准化的Y&#8217;矩阵是：</p>
+                            <p class="math inherit-color">\[ Y&#8217; = \begin{bmatrix} 2.5 &amp; 2.5 &amp; -2.5 &amp;
+                                -2.5 \newline 2 &amp; ? &amp; ? &amp; -2 \newline -.2.25 &amp; -2.25 &amp; 3.75 &amp;
+                                1.25 \newline -1.25 &amp; -1.25 &amp; 3.75 &amp; -1.25 \end{bmatrix} \]</p>
+                            <p>现在我们在进行预测时，需要对线性回归稍加修改，添上一个平均数项：</p>
+                            <p class="math inherit-color">\[ (\theta^{(j)})^Tx^{(i)}+\mu_i \]</p>
+                            <p>现在，对于新用户，我们会用平均值μ来替代零向量进行初始化，这样会显得更准确一些。</p>
+                            <h2><span id="i">三、第八次编程作业</span></h2>
+                            <p>这是该课程最后一次编程作业了。</p>
+                            <p>值得一提的是，截至目前，我们已经学过两个比较大的项目：<strong>垃圾邮件识别器、电影评分预测系统，需要好好复习</strong>。</p>
+                            <p><a href="https://github.com/YongyiZhou/Andrew-Ng/tree/master/ex8">传送门：https://github.com/YongyiZhou/Andrew-Ng/tree/master/ex8</a></p>
+
+                            <div class="wp_rp_wrap  wp_rp_momma" id="wp_rp_first">
+                                <div class="wp_rp_content">
+                                    <h3 class="related_post_title"><span id="i-2">更多文章</span></h3>
+                                    <ul class="related_post wp_rp">
+                                        <li data-position="0" data-poid="in-334" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-10/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/uploads/2018/04/5a69489b82e62-150x150.png"
+                                                    alt="吴恩达《机器学习》课程学习笔记（十）—— K-Means聚类算法与PCA主成分分析" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-10/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（十）—— K-Means聚类算法与PCA主成分分析</a></li>
+                                        <li data-position="1" data-poid="in-276" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-7/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/plugins/wordpress-23-related-posts-plugin/static/thumbs/12.jpg"
+                                                    alt="吴恩达《机器学习》课程学习笔记（七）—— 神经网络的学习算法" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-7/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（七）—— 神经网络的学习算法</a></li>
+                                        <li data-position="2" data-poid="in-232" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-5/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/uploads/2018/02/5a7efb0399ae7-150x150.png"
+                                                    alt="吴恩达《机器学习》课程学习笔记（五）—— 正则化" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-5/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（五）—— 正则化</a></li>
+                                        <li data-position="3" data-poid="in-191" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-3/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/uploads/2018/02/5a741eb0b5a4e-150x150.png"
+                                                    alt="吴恩达《机器学习》课程学习笔记（三）—— 多元线性回归与多项式回归" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-3/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（三）—— 多元线性回归与多项式回归</a></li>
+                                        <li data-position="4" data-poid="in-301" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-8/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/uploads/2018/04/5ac421f52a708-150x150.png"
+                                                    alt="吴恩达《机器学习》课程学习笔记（八）—— 模型评价与误差分析" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-8/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（八）—— 模型评价与误差分析</a></li>
+                                        <li data-position="5" data-poid="in-256" data-post-type="none"><a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-6/"
+                                                class="wp_rp_thumbnail"><img src="https://www.zhouyongyi.com/wp-content/uploads/2018/02/5a94c17068577-150x150.png"
+                                                    alt="吴恩达《机器学习》课程学习笔记（六）—— 神经网络的表达" width="150" height="150" /></a><a
+                                                href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-6/"
+                                                class="wp_rp_title">吴恩达《机器学习》课程学习笔记（六）—— 神经网络的表达</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- Entry Content  end -->
+
+
+
+                        <!-- Tags
+                        ========================= -->
+                        <div class="tags-box"><strong>Tags: </strong><a class="tag-list" target="_blank" href="https://www.zhouyongyi.com/tag/machine-learning/"
+                                rel="tag">机器学习</a></div>
+
+
+
+
+
+                        <!-- Post Navigation
+                        ========================= -->
+                        <div class="entry-section-top entry-mark">
+                            <hr>
+                            <div class="row">
+                                <div class="col-xs-6 t-l">
+                                    <a href="https://www.zhouyongyi.com/heima-big-data-5/" rel="prev">&larr; Previous
+                                        Post</a> </div>
+                                <div class="col-xs-6 t-r">
+                                    <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-12/" rel="next">Next
+                                        Post &rarr;</a> </div>
+
+                            </div>
+                            <hr>
+                        </div>
+                        <!-- Post Navigation end -->
+
+
+                        <!-- Author bio
+                        ========================= -->
+
+
+
+                        <!-- Comments
+                        ========================= -->
+
+
+
+
+                        <div class="entry-section comments">
+
+
+
+
+
+                        </div>
+                        <!-- Comments  end -->
+
+
+                        <div id="respond" class="comment-respond">
+                            <h3 id="reply-title" class="comment-reply-title">Leave a Reply <small><a rel="nofollow" id="cancel-comment-reply-link"
+                                        href="/andrew-ng-machine-learning-notes-11/#respond" style="display:none;">Cancel
+                                        reply</a></small></h3>
+                            <form action="https://www.zhouyongyi.com/wp-comments-post.php" method="post" id="commentform"
+                                class="comment-form" novalidate>
+                                <p class="comment-notes">Your email address will not be published.</p>
+                                <div class="controls">
+                                    <input id="author" name="author" type="text" class="float-label required" value=""
+                                        aria-required='true' />
+                                    <label for="author">Name</label><span class="req-icon">*</span>
+                                </div>
+                                <div class="controls">
+                                    <input id="email" name="email" type="email" class="float-label required email"
+                                        value="" aria-required='true' />
+                                    <label for="email">Email</label><span class="req-icon">*</span>
+                                </div>
+                                <div class="controls">
+                                    <input id="url" name="url" type="text" class="float-label" value="" />
+                                    <label for="url">Website</label>
+                                </div>
+                                <div class="controls">
+                                    <textarea id="comment" class="float-label required" name="comment" aria-required='true'></textarea>
+                                    <label for="comment">Comment</label><span class="req-icon">*</span>
+                                </div>
+
+                                <p class="form-submit"><input name="submit" type="submit" id="submit" class="button button-hover button-border-thin button-size-s button-space-none button-fullwidth button-bg-primary"
+                                        value="Post Comment" /> <input type='hidden' name='comment_post_ID' value='350'
+                                        id='comment_post_ID' />
+                                    <input type='hidden' name='comment_parent' id='comment_parent' value='0' />
+                                </p>
+                                <p style="display: none;"><input type="hidden" id="akismet_comment_nonce" name="akismet_comment_nonce"
+                                        value="6c5509f59a" /></p>
+                                <p style="display: none;"><input type="hidden" id="ak_js" name="ak_js" value="122" /></p>
+                            </form>
+                        </div><!-- #respond -->
+
+
+
+
+
+
+                    </div>
+                    <!--  .col-md-9  end -->
+                    <div class="col-md-3">
+
+                        <!-- Sidebar
+                        ========================= -->
+
+
+
+                        <div class="sidebar-container" role="complementary">
+                            <div id="search-2" class="widget widget_search">
+                                <form method="get" id="searchform" class="searchform" action="https://www.zhouyongyi.com/">
+                                    <div class="search-box">
+                                        <label for="s">
+                                            <span class="screen-reader-text">Search for:</span>
+                                            <input class="controls-custom search-field" id="s" name="s" type="search"
+                                                value="" placeholder="Search &hellip;" />
+                                        </label>
+                                        <i class="fa fa-search wp-search-submit"></i>
+                                    </div>
+                                </form>
+                            </div>
+                            <div id="wpp-2" class="widget popular-posts">
+                                <h3 class="widget-title h5 font-uppercase">热门文章</h3>
+                                <!-- WordPress Popular Posts -->
+
+                                <ul class="wpp-list">
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-1/" title="吴恩达《机器学习》课程学习笔记（一）—— 绪论"
+                                            class="wpp-post-title" target="_self">吴恩达《机器学习》课程学习笔记（一）—— 绪论</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">744 views</span> |
+                                            <span class="wpp-comments">2 comments</span></span>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/vps-lnmp-wordpress-build-site/" title="利用VPS+LNMP1.5+WordPress搭建个人网站"
+                                            class="wpp-post-title" target="_self">利用VPS+LNMP1.5+WordPress搭建个人网站</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">663 views</span> |
+                                            <span class="wpp-comments">0 comments</span></span>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-3/" title="吴恩达《机器学习》课程学习笔记（三）—— 多元线性回归与多项式回归"
+                                            class="wpp-post-title" target="_self">吴恩达《机器学习》课程学习笔记（三）—— 多元线性回归与多项式回归</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">526 views</span> |
+                                            <span class="wpp-comments">0 comments</span></span>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-5/" title="吴恩达《机器学习》课程学习笔记（五）—— 正则化"
+                                            class="wpp-post-title" target="_self">吴恩达《机器学习》课程学习笔记（五）—— 正则化</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">461 views</span> |
+                                            <span class="wpp-comments">0 comments</span></span>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-2/" title="吴恩达《机器学习》课程学习笔记（二）—— 单变量线性回归"
+                                            class="wpp-post-title" target="_self">吴恩达《机器学习》课程学习笔记（二）—— 单变量线性回归</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">444 views</span> |
+                                            <span class="wpp-comments">2 comments</span></span>
+                                    </li>
+                                    <li>
+                                        <a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-9/" title="吴恩达《机器学习》课程学习笔记（九）—— 支持向量机SVM"
+                                            class="wpp-post-title" target="_self">吴恩达《机器学习》课程学习笔记（九）—— 支持向量机SVM</a>
+                                        <span class="wpp-meta post-stats"><span class="wpp-views">299 views</span> |
+                                            <span class="wpp-comments">0 comments</span></span>
+                                    </li>
+                                </ul>
+
+                            </div>
+                            <div id="categories-2" class="widget widget_categories">
+                                <h3 class="widget-title h5 font-uppercase">分类目录</h3>
+                                <ul class="link-list">
+                                    <li class="cat-item cat-item-17"><a href="https://www.zhouyongyi.com/distributed-system/">分布式系统</a>
+                                        <span class="cat-item-count"> 10 </span>
+                                        <ul class='children'>
+                                            <li class="cat-item cat-item-24"><a href="https://www.zhouyongyi.com/distributed-system/batch/">批处理系统</a>
+                                                <span class="cat-item-count"> 5 </span>
+                                            </li>
+                                            <li class="cat-item cat-item-23"><a href="https://www.zhouyongyi.com/distributed-system/streaming/">流处理系统</a>
+                                                <span class="cat-item-count"> 3 </span>
+                                            </li>
+                                            <li class="cat-item cat-item-25"><a href="https://www.zhouyongyi.com/distributed-system/message-queue/">消息队列</a>
+                                                <span class="cat-item-count"> 1 </span>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li class="cat-item cat-item-11"><a href="https://www.zhouyongyi.com/data-analysis/">数据分析</a>
+                                        <span class="cat-item-count"> 18 </span>
+                                        <ul class='children'>
+                                            <li class="cat-item cat-item-8"><a href="https://www.zhouyongyi.com/data-analysis/data-mining-algorithm/">挖掘算法</a>
+                                                <span class="cat-item-count"> 12 </span>
+                                            </li>
+                                            <li class="cat-item cat-item-27"><a href="https://www.zhouyongyi.com/data-analysis/natural-language-process/">自然语言处理</a>
+                                                <span class="cat-item-count"> 6 </span>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                    <li class="cat-item cat-item-4"><a href="https://www.zhouyongyi.com/things/">杂记</a>
+                                        <span class="cat-item-count"> 5 </span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div id="tag_cloud-2" class="widget widget_tag_cloud">
+                                <h3 class="widget-title h5 font-uppercase">标签</h3>
+                                <div class="tagcloud"><a href="https://www.zhouyongyi.com/tag/hadoop/" class='tag-link'
+                                        data-tag-id="tag-cloud-link tag-link-18 tag-link-position-1" data-no-style="font-size: 14.913580246914pt;"
+                                        aria-label="hadoop (4个项目)">hadoop<span class='tag-link' data-tag-id="tag-link-count">
+                                            (4)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/kafka/" class='tag-link' data-tag-id="tag-cloud-link tag-link-21 tag-link-position-2"
+                                        data-no-style="font-size: 8pt;" aria-label="kafka (1个项目)">kafka<span class='tag-link'
+                                            data-tag-id="tag-link-count"> (1)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/leetcode/" class='tag-link' data-tag-id="tag-cloud-link tag-link-14 tag-link-position-3"
+                                        data-no-style="font-size: 8pt;" aria-label="leetcode (1个项目)">leetcode<span
+                                            class='tag-link' data-tag-id="tag-link-count"> (1)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/linux/" class='tag-link' data-tag-id="tag-cloud-link tag-link-29 tag-link-position-4"
+                                        data-no-style="font-size: 8pt;" aria-label="linux (1个项目)">linux<span class='tag-link'
+                                            data-tag-id="tag-link-count"> (1)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/nlp/" class='tag-link' data-tag-id="tag-cloud-link tag-link-28 tag-link-position-5"
+                                        data-no-style="font-size: 17.506172839506pt;" aria-label="NLP (6个项目)">NLP<span
+                                            class='tag-link' data-tag-id="tag-link-count"> (6)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/storm/" class='tag-link' data-tag-id="tag-cloud-link tag-link-19 tag-link-position-6"
+                                        data-no-style="font-size: 8pt;" aria-label="storm (1个项目)">storm<span class='tag-link'
+                                            data-tag-id="tag-link-count"> (1)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/streaming/" class='tag-link' data-tag-id="tag-cloud-link tag-link-20 tag-link-position-7"
+                                        data-no-style="font-size: 13.185185185185pt;" aria-label="streaming (3个项目)">streaming<span
+                                            class='tag-link' data-tag-id="tag-link-count"> (3)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/wordpress/" class='tag-link' data-tag-id="tag-cloud-link tag-link-6 tag-link-position-8"
+                                        data-no-style="font-size: 11.111111111111pt;" aria-label="wordpress (2个项目)">wordpress<span
+                                            class='tag-link' data-tag-id="tag-link-count"> (2)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/%e4%ba%91%e8%ae%a1%e7%ae%97/" class='tag-link'
+                                        data-tag-id="tag-cloud-link tag-link-30 tag-link-position-9" data-no-style="font-size: 11.111111111111pt;"
+                                        aria-label="云计算 (2个项目)">云计算<span class='tag-link' data-tag-id="tag-link-count">
+                                            (2)</span></a>
+                                    <a href="https://www.zhouyongyi.com/tag/machine-learning/" class='tag-link'
+                                        data-tag-id="tag-cloud-link tag-link-9 tag-link-position-10" data-no-style="font-size: 22pt;"
+                                        aria-label="机器学习 (12个项目)">机器学习<span class='tag-link' data-tag-id="tag-link-count">
+                                            (12)</span></a></div>
+                            </div>
+                            <div id="recent-comments-2" class="widget widget_recent_comments">
+                                <h3 class="widget-title h5 font-uppercase">近期评论</h3>
+                                <ul id="recentcomments">
+                                    <li class="recentcomments"><span class="comment-author-link"><a href='https://www.zhouyongyi.com'
+                                                rel='external nofollow' class='url'>zhouyongyi</a></span>发表在《<a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-7/#comment-66">吴恩达《机器学习》课程学习笔记（七）——
+                                            神经网络的学习算法</a>》</li>
+                                    <li class="recentcomments"><span class="comment-author-link">Yanji Chen</span>发表在《<a
+                                            href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-7/#comment-65">吴恩达《机器学习》课程学习笔记（七）——
+                                            神经网络的学习算法</a>》</li>
+                                    <li class="recentcomments"><span class="comment-author-link">xky</span>发表在《<a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-4/#comment-22">吴恩达《机器学习》课程学习笔记（四）——
+                                            逻辑回归</a>》</li>
+                                    <li class="recentcomments"><span class="comment-author-link">zhouyongyi</span>发表在《<a
+                                            href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-4/#comment-21">吴恩达《机器学习》课程学习笔记（四）——
+                                            逻辑回归</a>》</li>
+                                    <li class="recentcomments"><span class="comment-author-link">xky</span>发表在《<a href="https://www.zhouyongyi.com/andrew-ng-machine-learning-notes-4/#comment-20">吴恩达《机器学习》课程学习笔记（四）——
+                                            逻辑回归</a>》</li>
+                                </ul>
+                            </div>
+                            <div id="wp_statistics_widget-3" class="widget widget_wp_statistics_widget">
+                                <h3 class="widget-title h5 font-uppercase"></h3>
+                                <ul>
+                                    <li><label>今天的访问: </label>92</li>
+                                    <li><label>累计访问: </label>27,961</li>
+                                    <li><label>总计文章: </label>32</li>
+                                    <li><label>最后发表日期: </label>2018-09-04</li>
+                                </ul>
+                            </div>
+                            <div id="toc-widget-4" class="widget toc_widget">
+                                <h3 class="widget-title h5 font-uppercase">Contents</h3>
+                                <ul class="toc_widget_list no_bullets">
+                                    <li><a href="#Anomaly_Detection">一、异常检测（Anomaly Detection）</a>
+                                        <ul>
+                                            <li><a href="#1Problem_Motivation">1.导论（Problem Motivation）</a></li>
+                                            <li><a href="#2Algorithm">2.算法（Algorithm）</a></li>
+                                            <li><a href="#3Developing_and_Evaluating_an_Anomaly_Detection_System">3.开发和评估一个异常监测系统（Developing
+                                                    and Evaluating an Anomaly Detection System）</a></li>
+                                            <li><a href="#4Anomaly_Detection_vs_Supervised_Learning">4.异常检测与监督学习（Anomaly
+                                                    Detection vs. Supervised Learning）</a></li>
+                                            <li><a href="#5Choosing_What_Features_to_Use">5.选取要使用的特征量（Choosing What
+                                                    Features to Use）</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#Recommender_Systems">二、推荐系统（Recommender Systems）</a>
+                                        <ul>
+                                            <li><a href="#1Problem_Formulation">1.导论（Problem Formulation）</a></li>
+                                            <li><a href="#2Content_Based_Recommendations">2.基于内容的推荐（Content Based
+                                                    Recommendations）</a></li>
+                                            <li><a href="#3Collaborative_Filtering">3.协作过滤（Collaborative Filtering）</a></li>
+                                            <li><a href="#4Vectorization_Low_Rank_Matrix_Factorization">4.向量化：低秩矩阵分解（Vectorization:
+                                                    Low Rank Matrix Factorization）</a></li>
+                                            <li><a href="#5Mean_Normalization">5.实现的细节：均值标准化（Mean Normalization）</a></li>
+                                        </ul>
+                                    </li>
+                                    <li><a href="#i">三、第八次编程作业</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <!-- .sidebar-container end -->
+
+
+                    </div>
+                    <!--  .col-md-3  end -->
+
+                </div>
+                <!-- .row  end -->
+
+
+            </div>
+            <!-- .container end -->
+
+        </section>
+
+
+
+
+
+        <!-- Footer
+        ============================================= -->
+        <footer class="footer-main-container">
+
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4 t-l">
+
+                        <a href="https://wordpress.org/">Powered by WordPress</a>
+
+                    </div>
+                    <div class="col-md-4 t-c">
+
+                        <div class="footer-menu">
+
+                        </div>
+
+                    </div>
+                    <div class="col-md-4 t-r">
+
+
+                        <div class="social-list social-footer">
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+            <!-- .container  end -->
+
+        </footer>
+
+
+
+    </div>
+    <!-- .wrapper end -->
+
+
+    <div id="insert_math-dialog" title="Inserting math" data-title="Inserting math" data-title-edit="Editing math">
+
+        <div class="insert_math-display-mode-container insert_math-container">
+            <div class="insert_math-label">Insert math as</div>
+            <div class="insert_math-display-block insert_math-button insert_math-checked">Block</div>
+            <div class="insert_math-display-inline insert_math-button">Inline</div>
+        </div>
+
+        <div class="insert_math-additional-settings-container insert_math-container">
+            <div class="insert_math-additional-settings-header">Additional settings</div>
+
+            <div class="insert_math-additional-settings">
+
+                <div class="insert_math-color-container insert_math-container">
+                    <div class="insert_math-label">Formula color</div>
+                    <div class="insert_math-color-default insert_math-button insert_math-checked">Text color</div>
+                    <div class="insert_math-color-custom insert_math-button" contenteditable="true" style="color: #333333;">#333333</div>
+                </div>
+
+                <div class="insert_math-id-container insert_math-container">
+                    <label for="insert_math-formula-id" class="insert_math-label">Formula ID</label>
+                    <input type="text" id="insert_math-formula-id">
+                </div>
+
+                <div class="insert_math-classes-container insert_math-container">
+                    <label for="insert_math-formula-classes" class="insert_math-label">Formula classes</label>
+                    <input type="text" id="insert_math-formula-classes">
+                </div>
+
+            </div>
+        </div>
+
+        <div class="insert_math-expression-container insert_math-container">
+            <div class="insert_math-expression-tip">
+                Type math using <a href="https://en.wikibooks.org/wiki/LaTeX/Mathematics#Symbols" target="_blank">LaTeX</a>
+            </div>
+            <textarea id="insert_math-expression" class="insert_math-expression" rows="3" placeholder="Start typing math here..."></textarea>
+        </div>
+
+        <div class="insert_math-preview-container insert_math-container">
+            <div class="insert_math-preview-header">
+                Preview <span class="insert_math-preview-icon dashicons dashicons-update"></span>
+            </div>
+            <div class="insert_math-preview">
+                <div id="insert_math-preview" class="insert_math-preview-math">\({}\)</div>
+                <div class="insert_math-preview-empty">Nothing to preview</div>
+            </div>
+        </div>
+
+        <div class="insert_math-insert" data-value="Insert" data-value-edit="Edit">Insert</div>
+
+    </div>
+
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/core.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/widget.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/mouse.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/resizable.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/draggable.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/button.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/position.min.js?ver=1.11.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/jquery/ui/dialog.min.js?ver=1.11.4'></script>
+    <script type='text/javascript'>
+        /* <![CDATA[ */
+        var tocplus = { "smooth_scroll": "1" };
+/* ]]> */
+    </script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/table-of-contents-plus/front.min.js?ver=1509'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.prettyPhoto.min.js?ver=3.1.5'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.flexslider.min.js?ver=2.6.2'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.bgParallax.min.js?ver=1.1.3'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/imagesloaded.min.js?ver=3.2.0'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/masonry.min.js?ver=3.3.2'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/scrollreveal.min.js?ver=3.3.1'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.waitforimages.min.js?ver=1.5.0'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.ui.totop.min.js?ver=1.2'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.sidr.min.js?ver=2.2.1'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/animsition.min.js?ver=4.0.2'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/jquery.scrolltofixed.min.js?ver=1.0.0'></script>
+    <script type='text/javascript'>
+        /* <![CDATA[ */
+        var wp_theme_root_path = { "templateUrl": "https:\/\/www.zhouyongyi.com\/wp-content\/themes\/shadower", "homeUrl": "https:\/\/www.zhouyongyi.com" };
+/* ]]> */
+    </script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/themes/shadower/assets/js/min/script.min.js?ver=2.7.9'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/comment-reply.min.js?ver=4.9.8'></script>
+    <script type='text/javascript'>
+        /* <![CDATA[ */
+        var q2w3_sidebar_options = [{ "sidebar": "sidebar-1", "margin_top": 10, "margin_bottom": 0, "stop_id": "", "screen_max_width": 0, "screen_max_height": 0, "width_inherit": false, "refresh_interval": 1500, "window_load_hook": false, "disable_mo_api": false, "widgets": ["toc-widget-4"] }];
+/* ]]> */
+    </script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/q2w3-fixed-widget/js/q2w3-fixed-widget.min.js?ver=5.1.4'></script>
+    <script type='text/javascript' src='https://www.zhouyongyi.com/wp-includes/js/wp-embed.min.js?ver=4.9.8'></script>
+    <script async="async" type='text/javascript' src='https://www.zhouyongyi.com/wp-content/plugins/akismet/_inc/form.js?ver=4.0.8'></script>
+
+</body>
+
+</html>
